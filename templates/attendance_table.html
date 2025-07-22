@@ -1,0 +1,20 @@
+{% if attendance_list %}
+<table class="table table-bordered table-striped">
+    <thead class="table-dark">
+        <tr>
+            <th>Name</th>
+            <th>Timestamp</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for name, timestamp in attendance_list %}
+            <tr>
+                <td>{{ name }}</td>
+                <td>{{ timestamp }}</td>
+            </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<p>No attendance records yet.</p>
+{% endif %}

@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Face Recognition Attendance</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f8f9fa;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        h1, h4 {
+            color: #343a40;
+        }
+
+        .card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+
+        button {
+            transition: 0.3s ease all;
+        }
+
+        button:hover {
+            transform: scale(1.05);
+        }
+
+        video, canvas {
+            border: 2px solid #333;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .btn-close {
+            font-size: 0.8rem;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container py-4">
+    <a href="/about" class="btn btn-info">About This Project</a>
+
+    <h1 class="text-center mb-4">🎯 Face Recognition Attendance System</h1>
+
+    {% with messages = get_flashed_messages() %}
+      {% if messages %}
+        {% for message in messages %}
+          <div class="alert alert-info alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+          </div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    <!-- Webcam Attendance Section -->
+    <div class="card text-center">
+        <h4>📸 Live Webcam Attendance</h4>
+        <button id="startCamera" class="btn btn-success my-2">Start Camera</button><br>
+        <video id="video" width="400" height="300" autoplay style="display:none;"></video><br>
+        <button id="snap" class="btn btn-primary my-2" style="display:none;">Capture & Mark Attendance</button>
+        <canvas id="canvas" width="400" height="300" style="display:none;"></canvas>
+    </div>
+
+    <!-- Attendance Records Section -->
+    <div class="card">
+        <h4>📄 Attendance Records</h4>
+        <div id="attendanceSection">
+            {% include 'attendance_table.html' %}
+        </div>
+        <div class="d-flex gap-2 mt-3">
+            <a href="/download" class="btn btn-success">Download CSV</a>
+            <a href="/clear" class="btn btn-danger">Clear Records</a>
+            <a href="/reload_known_faces" class="btn btn-secondary">Reload Known Faces</a>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    const video = document.getElementById('video');
+    const canvas = document.getElementById('canvas');
+    const snap = document.getElementById('snap');
+    const startCamera = document.getElementById('startCamera');
+    const context = canvas.getContext('2d');
+
+    startCamera.addEventListener('click', () => {
+        navigator.mediaDevices.getUserMedia({ video: true })
+            .then(stream => {
+                video.srcObject = stream;
+                video.style.display = 'block';
+                snap.style.display = 'inline-block';
+                startCamera.style.display = 'none';
+            })
+            .catch(() => alert('Camera access denied.'));
+    });
+
+    snap.addEventListener('click', () => {
+        context.drawImage(video, 0, 0, canvas.width, canvas.height);
+        canvas.toBlob(blob => {
+            const formData = new FormData();
+            formData.append('image', blob, 'webcam_capture.png');
+
+            fetch('/', {
+                method: 'POST',
+                body: formData
+            }).then(() => {
+                fetch('/attendance_table')
+                    .then(res => res.text())
+                    .then(html => document.getElementById('attendanceSection').innerHTML = html);
+            });
+        }, 'image/png');
+    });
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
